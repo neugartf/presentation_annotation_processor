@@ -1,2 +1,4 @@
 rootProject.name = 'bugkapt'
+include 'annotationProcessor'
+include 'cli'
 
