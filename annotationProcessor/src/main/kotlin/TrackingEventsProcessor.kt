@@ -24,38 +24,32 @@ class TrackingEventsProcessor : AbstractProcessor() {
         val annotatedElements = roundEnv.getElementsAnnotatedWith(TrackingEventsMap::class.java)
         if (annotatedElements.isEmpty()) return false
 
-        val nodes: MutableList<Node> = mutableListOf()
         annotatedElements.take(1).forEach {
             val module = it.getAnnotation(TrackingEventsMap::class.java).module
             processingEnv.messager.printMessage(Diagnostic.Kind.NOTE, it.simpleName)
-            it.enclosedElements.filter { it.kind == ElementKind.FIELD && it.getAnnotation(TrackingParam::class.java) != null }
-                .forEach {
-                    val variableElement = it as VariableElement
-                    val node = Node("item")
-                    node.text("${variableElement.constantValue}:${it.getAnnotation(TrackingParam::class.java).tracker}")
-                    nodes.add(node)
-                    processingEnv.messager.printMessage(
-                        Diagnostic.Kind.NOTE,
-                        variableElement.constantValue.toString()
-                    )
-                }
-            writeToXml(nodes, module)
+            val elements =
+                it.enclosedElements.filter { it.kind == ElementKind.FIELD && it.getAnnotation(TrackingParam::class.java) != null }
+                    .map { it as VariableElement }.toList()
+
+            writeToXml(elements, module)
         }
         return false
     }
 
-    private fun writeToXml(nodes: MutableList<Node>, module: String) {
-        val people = xml("resources") {
+    private fun writeToXml(nodes: List<VariableElement>, module: String) {
+        val resources = xml("resources") {
             version = XmlVersion.V10
             "array" {
                 attribute("name", "${module}_tracking_events")
                 nodes.forEach {
-                    this.addNode(it)
+                    val node = Node("item")
+                    node.text("${it.constantValue}:${it.getAnnotation(TrackingParam::class.java).tracker}")
+                    this.addNode(node)
                 }
             }
         }
 
-        val asString = people.toString(PrintOptions(singleLineTextElements = true))
+        val asString = resources.toString(PrintOptions(singleLineTextElements = true))
 
         val filer = processingEnv.filer
         try {
