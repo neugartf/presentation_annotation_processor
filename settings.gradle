@@ -1,4 +1,4 @@
-rootProject.name = 'bugkapt'
+rootProject.name = 'presentation_annotation_processor'
 include 'annotationProcessor'
 include 'cli'
 
